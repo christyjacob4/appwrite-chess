@@ -4,6 +4,7 @@ import Appwrite from "appwrite";
 import { useState, useEffect } from "react";
 import realtime from "../../utils/Realtime";
 import Alert from "../Alert/Alert";
+import { GameMode } from "../../utils/utils";
 
 const App = () => {
   const [appwrite, setAppwrite] = useState({});
@@ -102,7 +103,7 @@ const App = () => {
 
       {/* Left Side  */}
       <div className="chessboard my-auto mx-auto">
-        <ChessBoard />
+        <ChessBoard mode={GameMode.DEMO}/>
       </div>
 
       {/* Right Side */}

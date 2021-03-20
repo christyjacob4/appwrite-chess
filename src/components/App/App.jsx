@@ -34,7 +34,7 @@ const App = () => {
   /** Detect App Mode -> Create Game or Join Game */
   useEffect(() => {
     let queryParams = qs.parse(window.location.search.substr(1));
-    let mode = queryParams["id"] ? AppMode.JOIN : AppMode.CREATE;
+    let mode = queryParams["documentId"] ? AppMode.JOIN : AppMode.CREATE;
     setMode(mode);
   }, []);
 
@@ -62,6 +62,70 @@ const App = () => {
 
   function handleJoinGame() {
     console.log("Joining Game");
+    
+    let queryParams = qs.parse(window.location.search.substr(1));
+    let { documentId, playerOne } = queryParams
+
+    setResponseState({
+      loading: true,
+      error: false,
+    });
+
+    /** Create Account  */
+    let randomEmailId = `${createId(8)}@gmail.com`;
+    let randomPassword = createId(8);
+    let randomName = randomEmailId;
+    let payload = {
+      [ChessCollection.properties.fen]: "IN PROGRESS",
+      [ChessCollection.properties.playerTwo]: "",
+    };
+
+    let data = {
+      email: randomEmailId,
+      password: randomPassword,
+      name: randomName,
+    };
+
+    appwrite.account
+      .create(randomEmailId, randomPassword, randomName) /** Create Account */
+      .then((response) => {
+        data["userId"] = response["$id"];
+        return appwrite.account.createSession(
+          randomEmailId,
+          randomPassword
+        ); /** Create Session */
+      })
+      .then((response) => {
+        data["sessionId"] = response["$id"];
+        payload[ChessCollection.properties.playerTwo] = data["userId"];
+        return appwrite.database.updateDocument(
+          /** Create Document */
+          ChessCollection.id,
+          documentId,
+          payload,
+          [`user:${data["userId"]}`, `user:${playerOne}`],
+          [`user:${data["userId"]}`, `user:${playerOne}`]
+        );
+      })
+      .then((response) => {
+        console.log(response);
+        setResponseState({
+          error: false,
+          loading: false,
+          message: "Joined Game!",
+        });
+        setShowAlert(true);
+        data["documentId"] = response["$id"];
+        setData(data);
+      })
+      .catch((err) => {
+        setResponseState({
+          message: err.message,
+          loading: false,
+          error: true,
+        });
+        setShowAlert(true);
+      });
   }
 
   function handleCreateGame() {
@@ -116,9 +180,9 @@ const App = () => {
         });
         setShowAlert(true);
         const query = {
-          id : response["$id"],
-          playerOne :  data['userId']
-        }
+          documentId: response["$id"],
+          playerOne: data["userId"],
+        };
         data["documentId"] = response["$id"];
         data["gameUrl"] = `${window.location.origin}/?${qs.stringify(query)}`;
         setData(data);
@@ -157,7 +221,7 @@ const App = () => {
         {renderAppMode(mode)}
       </div>
 
-      <footer className="justify-self-center">Made with 💚 by Appwrite</footer>
+      <footer className="justify-self-center">Made with ♥️ and Appwrite</footer>
     </div>
   );
 };

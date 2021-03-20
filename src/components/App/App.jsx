@@ -9,10 +9,7 @@ import JoinGame from "../JoinGame/JoinGame";
 import CreateGame from "../CreateGame/CreateGame";
 import { ChessCollection } from "../../utils/config";
 
-
-
 const App = () => {
-
   /** HOOKS START */
   const [appwrite, setAppwrite] = useState({});
   const [responseState, setResponseState] = useState({
@@ -42,12 +39,24 @@ const App = () => {
   }, []);
 
   function renderAppMode(mode) {
-    switch(mode) {
+    switch (mode) {
       case AppMode.JOIN:
-        return <JoinGame handleJoinGame={handleJoinGame} responseState={responseState} data={data}/>
+        return (
+          <JoinGame
+            handleJoinGame={handleJoinGame}
+            responseState={responseState}
+            data={data}
+          />
+        );
       case AppMode.CREATE:
       default:
-        return <CreateGame handleCreateGame={handleCreateGame} responseState={responseState} data={data} />
+        return (
+          <CreateGame
+            handleCreateGame={handleCreateGame}
+            responseState={responseState}
+            data={data}
+          />
+        );
     }
   }
 
@@ -67,9 +76,9 @@ const App = () => {
     let randomPassword = createId(8);
     let randomName = randomEmailId;
     let payload = {
-      [ChessCollection.properties.fen] : "WAITING",
-      [ChessCollection.properties.playerOne] : "",
-      [ChessCollection.properties.playerTwo] : ""
+      [ChessCollection.properties.fen]: "WAITING",
+      [ChessCollection.properties.playerOne]: "",
+      [ChessCollection.properties.playerTwo]: "",
     };
 
     let data = {
@@ -79,15 +88,19 @@ const App = () => {
     };
 
     appwrite.account
-      .create(randomEmailId, randomPassword, randomName)
+      .create(randomEmailId, randomPassword, randomName) /** Create Account */
       .then((response) => {
         data["userId"] = response["$id"];
-        return appwrite.account.createSession(randomEmailId, randomPassword);
+        return appwrite.account.createSession(
+          randomEmailId,
+          randomPassword
+        ); /** Create Session */
       })
       .then((response) => {
         data["sessionId"] = response["$id"];
         payload[ChessCollection.properties.playerOne] = data["userId"];
         return appwrite.database.createDocument(
+          /** Create Document */
           ChessCollection.id,
           payload,
           ["*", `user:${data["userId"]}`],
@@ -102,8 +115,12 @@ const App = () => {
           message: "Great! Let's get Started!",
         });
         setShowAlert(true);
+        const query = {
+          id : response["$id"],
+          playerOne :  data['userId']
+        }
         data["documentId"] = response["$id"];
-        data["gameUrl"] = `${window.location.origin}/?id=${response["$id"]}`
+        data["gameUrl"] = `${window.location.origin}/?${qs.stringify(query)}`;
         setData(data);
       })
       .catch((err) => {
@@ -117,22 +134,13 @@ const App = () => {
   }
 
   return (
-    <div className="_container h-screen bg-gray-800  text-gray-100">
+    <div className="grid_container h-screen bg-gray-800  text-gray-100">
       {showAlert ? (
         <Alert {...responseState} setResponseState={setResponseState} />
       ) : null}
       <header>
         <ul className="flex justify-between text-xl py-8 px-8 md:px-48 ">
           <li>Chess</li>
-          <li>
-            <a
-              href="https://github.com/Icesofty"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Made with 💚 by Appwrite
-            </a>
-          </li>
         </ul>
       </header>
 
@@ -149,6 +157,7 @@ const App = () => {
         {renderAppMode(mode)}
       </div>
 
+      <footer className="justify-self-center">Made with 💚 by Appwrite</footer>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 const JoinGame = ({handleJoinGame, responseState, data}) => {
     return (
       <>
-        <h1 className="text-6xl text-center">
+        <h1 className="text-5xl font-semibold text-center px-16 py-8">
           Ready to <span className="text-green-600">Join?</span> 
         </h1>
   

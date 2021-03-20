@@ -17,7 +17,7 @@ const CreateGame = ({ handleCreateGame, responseState, data }) => {
             type="text"
             value={data.gameUrl}
             readOnly
-            className="w-3/5 px-4 py-4 placeholder-gray-400 text-gray-700 bg-white text-lg shadow outline-none focus:outline-none focus:shadow-outline rounded-l-lg"
+            className="xl:w-1/2 md:w-3/5 px-4 py-4 placeholder-gray-400 text-gray-700 bg-white text-lg shadow outline-none focus:outline-none focus:shadow-outline rounded-l-lg"
           ></input>
           <button 
             onClick={() => navigator.clipboard.writeText(data.gameUrl)}

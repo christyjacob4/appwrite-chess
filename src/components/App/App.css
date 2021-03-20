@@ -1,22 +1,26 @@
-._container {
+.grid_container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 4em auto;
+  grid-template-rows: 4em auto 3em;
   gap: 0px 0px;
   grid-template-areas:
     "navigation navigation"
-    "chessboard action";
-  height: 100vh;
+    "chessboard action"
+    "footer footer";
 }
 
-._container header {
-  grid-area: navigation;
+.grid_container header { 
+  grid-area: navigation; 
 }
 
-._container .chessboard {
-  grid-area: chessboard;
+.grid_container .chessboard { 
+  grid-area: chessboard; 
 }
 
-._container .content {
-  grid-area: action;
+.grid_container .action { 
+  grid-area: action; 
+}
+
+.grid_container footer { 
+  grid-area: footer; 
 }

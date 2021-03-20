@@ -1,18 +1,30 @@
 import "chessboard-element";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Chess from "chess.js";
 import { GameMode } from "../../utils/utils";
 import realtime from "../../utils/Realtime";
+import { ChessCollection } from "../../utils/config";
 
-const ChessBoard = ({ mode, documentId }) => {
+const ChessBoard = ({
+  mode,
+  documentId,
+  playerOne,
+  playerTwo,
+  userId,
+  fen,
+  appwrite,
+}) => {
   const TIMEOUT = 1000;
   const [board, setBoard] = useState(null);
   const [game, setGame] = useState(new Chess());
-  const [timeout, changeTimeout] = useState(null);
+
+  var timeout = [];
 
   useEffect(() => {
     setBoard(document.querySelector("chess-board"));
-    clearTimeout(timeout)
+    console.log("In board Use effect");
+    cleanup()
+    
     switch (mode) {
       case GameMode.COMPUTER:
         setupComputerMatch();
@@ -21,37 +33,99 @@ const ChessBoard = ({ mode, documentId }) => {
         setupLiveMatch();
         break;
       case GameMode.DEMO:
+        timeout.push(setTimeout(makeRandomMove, TIMEOUT));
+        break;
       default:
-        changeTimeout(setTimeout(makeRandomMove, TIMEOUT));
         break;
     }
-  }, [board, mode]);
 
-  useEffect(() => {
-    clearTimeout(timeout)
-    if (mode === GameMode.LIVE) setupLiveMatch();
-  }, [documentId]);
+    return cleanup
+  }, [board, mode, documentId]);
+
+  function cleanup() {
+    timeout.forEach(it => clearTimeout(it))
+    timeout.length = 0
+  }
 
   function setupLiveMatch() {
+
     if (board != null && documentId) {
       console.log("Watching Document ", documentId);
-      realtime.subscribe(
-        `documents.${documentId}`,
-        (message) => {
-          const data = [message.payload];
-          console.log(data);
-        }
-      );
-      board.setPosition("start");
+      realtime.subscribe(`documents.${documentId}`, (message) => {
+        const data = [message.payload];
+        console.log(data);
+      });
+
+      /** Setup the board */
+      let status = false
+      if (fen) status = game.load(fen) 
+      !status && game.reset()
+      board.setPosition(game.fen());
       board.draggablePieces = true;
+      userId === playerOne
+        ? (board.orientation = "white")
+        : (board.orientation = "black");
+
+      board.addEventListener("drag-start", (e) => {
+        const { source, piece, position, orientation } = e.detail;
+        // do not pick up pieces if the game is over
+        if (game.game_over()) {
+          e.preventDefault();
+          return;
+        }
+        // only pick up pieces for White
+        const playerOne = userId === playerOne
+        if (playerOne && piece.search(/^b/) !== -1) {
+          e.preventDefault();
+          return;
+        }
+      });
+
+      board.addEventListener("drop", (e) => {
+        const { source, target, setAction } = e.detail;
+        // see if the move is legal
+        const move = game.move({
+          from: source,
+          to: target,
+          promotion: "q", // NOTE: always promote to a queen for example simplicity
+        });
+        console.log("DROP", move)
+        // illegal move
+        if (move === null) {
+          setAction("snapback");
+          return;
+        }
+      });
+
+      // update the board position after the piece snap
+      // for castling, en passant, pawn promotion
+      board.addEventListener("snap-end", (e) => {
+        board.setPosition(game.fen());
+
+        const payload = {
+          fen: game.fen(),
+        };
+        // Update the doc with the new fen
+        appwrite.database.updateDocument(
+          /** Update Document */
+          ChessCollection.id,
+          documentId,
+          payload,
+          [],
+          []
+        );
+
+      });
     }
   }
 
   function setupComputerMatch() {
     if (board != null) {
-      board.setPosition("start");
+      let status = game.load(fen)
+      !status && game.reset()  
+      board.setPosition(game.fen());
       board.draggablePieces = true;
-
+      
       board.addEventListener("drag-start", (e) => {
         const { source, piece, position, orientation } = e.detail;
         // do not pick up pieces if the game is over
@@ -94,6 +168,7 @@ const ChessBoard = ({ mode, documentId }) => {
   }
 
   function makeRandomMove(repeat = true) {
+    console.log("Make Random Move Called with repeat", repeat)
     const possibleMoves = game.moves();
     // exit if the game is over
     if (game.game_over()) {
@@ -105,8 +180,8 @@ const ChessBoard = ({ mode, documentId }) => {
       board.setPosition(game.fen());
     }
     if (repeat) {
-      clearTimeout(timeout)
-      changeTimeout(setTimeout(makeRandomMove, TIMEOUT));
+      cleanup()
+      timeout.push(setTimeout(makeRandomMove, TIMEOUT));
     }
   }
 

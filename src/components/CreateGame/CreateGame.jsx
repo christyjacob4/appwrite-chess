@@ -5,7 +5,7 @@ import { createId } from "../../utils/utils";
 import qs from "querystring";
 import Alert from "../Alert/Alert";
 
-const CreateGame = ({setAlert}) => {
+const CreateGame = ({ setAlert }) => {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
 

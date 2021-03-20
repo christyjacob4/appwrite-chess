@@ -9,7 +9,7 @@ import JoinGame from "../JoinGame/JoinGame";
 import CreateGame from "../CreateGame/CreateGame";
 import { ChessCollection } from "../../utils/config";
 import realtime from "../../utils/Realtime";
-import '../../api/api'
+import "../../api/api";
 
 const App = () => {
   /** HOOKS START */
@@ -19,7 +19,7 @@ const App = () => {
     loading: false,
   });
   const [alert, setAlert] = useState({});
-  
+
   /** The object used to store the userId, document ID etc. */
   const [data, setData] = useState({});
   const [mode, setMode] = useState(AppMode.CREATE);
@@ -37,7 +37,10 @@ const App = () => {
   /** Detect App Mode -> Create Game or Join Game */
   useEffect(() => {
     let queryParams = qs.parse(window.location.search.substr(1));
-    let mode = (queryParams["documentId"] && queryParams["playerOne"]) ? AppMode.JOIN : AppMode.CREATE;
+    let mode =
+      queryParams["documentId"] && queryParams["playerOne"]
+        ? AppMode.JOIN
+        : AppMode.CREATE;
     setMode(mode);
   }, []);
 
@@ -53,17 +56,15 @@ const App = () => {
         );
       case AppMode.CREATE:
       default:
-        return (
-          <CreateGame setAlert={setAlert}/>
-        );
+        return <CreateGame setAlert={setAlert} />;
     }
   }
 
   function handleJoinGame() {
     console.log("Joining Game");
-    
+
     let queryParams = qs.parse(window.location.search.substr(1));
-    let { documentId, playerOne } = queryParams
+    let { documentId, playerOne } = queryParams;
 
     setResponseState({
       loading: true,
@@ -115,9 +116,9 @@ const App = () => {
         });
         setAlert(true);
         data["documentId"] = response["$id"];
-        data["playerOne"] = response["playerOne"]
-        data["playerTwo"] = response["playerTwo"]
-        data["fen"] = response["fen"]
+        data["playerOne"] = response["playerOne"];
+        data["playerTwo"] = response["playerTwo"];
+        data["fen"] = response["fen"];
         setData(data);
       })
       .catch((err) => {
@@ -145,7 +146,7 @@ const App = () => {
           mode={data.documentId ? GameMode.LIVE : GameMode.DEMO}
           // mode={GameMode.COMPUTER}
           {...data}
-          appwrite = {appwrite}
+          appwrite={appwrite}
         />
       </div>
 

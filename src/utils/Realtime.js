@@ -2,7 +2,7 @@ let realtime = {
     /** @type {WebSocket}  */
     socket: null,
     timeout: null,
-    endpointRealtime: "https://appwrite-realtime.monitor-api.com/v1",
+    endpointRealtime: "ws://appwrite-realtime.monitor-api.com/v1",
     project : '6054c42b77f63',
     channels: {},
     lastMessage: {},

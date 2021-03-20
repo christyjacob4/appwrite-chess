@@ -2,11 +2,18 @@ import ChessBoard from "../ChessBoard/ChessBoard";
 import "./App.css";
 import Appwrite from "appwrite";
 import { useState, useEffect } from "react";
-import realtime from "../../utils/Realtime";
 import Alert from "../Alert/Alert";
-import { GameMode } from "../../utils/utils";
+import { GameMode, AppMode, createId } from "../../utils/utils";
+import qs from "querystring";
+import JoinGame from "../JoinGame/JoinGame";
+import CreateGame from "../CreateGame/CreateGame";
+import { ChessCollection } from "../../utils/config";
+
+
 
 const App = () => {
+
+  /** HOOKS START */
   const [appwrite, setAppwrite] = useState({});
   const [responseState, setResponseState] = useState({
     error: false,
@@ -14,9 +21,11 @@ const App = () => {
   });
   const [showAlert, setShowAlert] = useState(false);
   /** The object used to store the userId, document ID etc. */
-  const [date, setData] = useState({});
-  const CHESS_COLLECTION_ID = "6054da89c0d0c";
+  const [data, setData] = useState({});
+  const [mode, setMode] = useState(AppMode.CREATE);
+  /** HOOKS END */
 
+  /** Initialise the SDK */
   useEffect(() => {
     var sdk = new Appwrite();
     sdk
@@ -25,15 +34,25 @@ const App = () => {
     setAppwrite(sdk);
   }, []);
 
-  function makeid(length) {
-    var result = "";
-    var characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    var charactersLength = characters.length;
-    for (var i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  /** Detect App Mode -> Create Game or Join Game */
+  useEffect(() => {
+    let queryParams = qs.parse(window.location.search.substr(1));
+    let mode = queryParams["id"] ? AppMode.JOIN : AppMode.CREATE;
+    setMode(mode);
+  }, []);
+
+  function renderAppMode(mode) {
+    switch(mode) {
+      case AppMode.JOIN:
+        return <JoinGame handleJoinGame={handleJoinGame} responseState={responseState} data={data}/>
+      case AppMode.CREATE:
+      default:
+        return <CreateGame handleCreateGame={handleCreateGame} responseState={responseState} data={data} />
     }
-    return result;
+  }
+
+  function handleJoinGame() {
+    console.log("Joining Game");
   }
 
   function handleCreateGame() {
@@ -42,26 +61,39 @@ const App = () => {
       loading: true,
       error: false,
     });
+
     /** Create Account  */
-    let randomId = `${makeid(8)}@gmail.com`;
-    let randomPassword = makeid(8);
-    let randomName = randomId;
+    let randomEmailId = `${createId(8)}@gmail.com`;
+    let randomPassword = createId(8);
+    let randomName = randomEmailId;
     let payload = {
-      fen: "WAITING",
+      [ChessCollection.properties.fen] : "WAITING",
+      [ChessCollection.properties.playerOne] : "",
+      [ChessCollection.properties.playerTwo] : ""
     };
+
+    let data = {
+      email: randomEmailId,
+      password: randomPassword,
+      name: randomName,
+    };
+
     appwrite.account
-      .create(randomId, randomPassword, randomName)
-      .then((response) =>
-        appwrite.account.createSession(randomId, randomPassword)
-      )
-      .then((response) =>
-        appwrite.database.createDocument(
-          CHESS_COLLECTION_ID,
+      .create(randomEmailId, randomPassword, randomName)
+      .then((response) => {
+        data["userId"] = response["$id"];
+        return appwrite.account.createSession(randomEmailId, randomPassword);
+      })
+      .then((response) => {
+        data["sessionId"] = response["$id"];
+        payload[ChessCollection.properties.playerOne] = data["userId"];
+        return appwrite.database.createDocument(
+          ChessCollection.id,
           payload,
-          ["*"],
-          ["*"]
-        )
-      )
+          ["*", `user:${data["userId"]}`],
+          ["*", `user:${data["userId"]}`]
+        );
+      })
       .then((response) => {
         console.log(response);
         setResponseState({
@@ -70,6 +102,9 @@ const App = () => {
           message: "Great! Let's get Started!",
         });
         setShowAlert(true);
+        data["documentId"] = response["$id"];
+        data["gameUrl"] = `${window.location.origin}/?id=${response["$id"]}`
+        setData(data);
       })
       .catch((err) => {
         setResponseState({
@@ -103,32 +138,17 @@ const App = () => {
 
       {/* Left Side  */}
       <div className="chessboard my-auto mx-auto">
-        <ChessBoard mode={GameMode.DEMO}/>
+        <ChessBoard
+          mode={data.documentId ? GameMode.LIVE : GameMode.DEMO}
+          {...data}
+        />
       </div>
 
       {/* Right Side */}
       <div className="content flex flex-col my-auto items-center">
-        <h1 className="text-6xl text-center">
-          Welcome to <span className="text-green-600">Realtime Chess</span>
-        </h1>
-
-        <button
-          className="mx-auto mt-8 py-4 px-16 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
-          onClick={handleCreateGame}
-        >
-          {responseState.loading ? "Creating Game ..." : "Create Game"}
-        </button>
-
-        <div className="flex mt-8 mx-auto">
-          <input
-            type="text"
-            className="px-4 py-4 placeholder-gray-400 text-gray-700 relative bg-white text-lg shadow outline-none focus:outline-none focus:shadow-outline rounded-l-lg"
-          ></input>
-          <button className="py-4 px-4 bg-white text-green-500 font-semibold shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 rounded-r-lg">
-            Copy
-          </button>
-        </div>
+        {renderAppMode(mode)}
       </div>
+
     </div>
   );
 };

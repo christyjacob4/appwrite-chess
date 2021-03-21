@@ -3,14 +3,14 @@ import api from "../../api/api";
 import { ChessCollection } from "../../utils/config";
 import { createId } from "../../utils/utils";
 import qs from "querystring";
-import Alert from "../Alert/Alert";
 
-const CreateGame = ({ setAlert }) => {
+const CreateGame = ({ setParentData }) => {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
 
   const handleCreateGame = async () => {
     try {
+      console.log('Creating Game');
       setLoading(true);
       let session = await api.getAccount();
       if (!session) {
@@ -34,28 +34,35 @@ const CreateGame = ({ setAlert }) => {
         ["*", `user:${session["$id"]}`]
       );
       if (!document) throw new Error("Unable to create game");
+      
       console.log(document);
+      
       const query = {
         documentId: document["$id"],
         playerOne: session["$id"],
       };
-
       setData({
         documentId: document["$id"],
+        userId: session['$id'],
         gameUrl: `${window.location.origin}/?${qs.stringify(query)}`,
         playerOne: document["playerOne"],
         playerTwo: document["playerTwo"],
       });
-      setLoading(false);
-      setAlert({
+      setParentData({
         show: true,
         color: "green",
         message: "Great! Let's get started",
+        userId: session['$id'],
+        documentId: document["$id"],
+        playerOne: document["playerOne"],
+        playerTwo: document["playerTwo"],
+        fen: document["fen"]
       });
+      setLoading(false);
     } catch (e) {
       console.log("There has been an error in handleCreateGame", e);
       setLoading(false);
-      setAlert({
+      setParentData({
         show: true,
         color: "red",
         message: e.message,

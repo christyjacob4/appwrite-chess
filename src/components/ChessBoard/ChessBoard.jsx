@@ -4,6 +4,7 @@ import Chess from "chess.js";
 import { GameMode } from "../../utils/utils";
 import realtime from "../../utils/Realtime";
 import { ChessCollection } from "../../utils/config";
+import api from "../../api/api";
 
 const ChessBoard = ({
   mode,
@@ -11,8 +12,7 @@ const ChessBoard = ({
   playerOne,
   playerTwo,
   userId,
-  fen,
-  appwrite,
+  fen
 }) => {
   const TIMEOUT = 1000;
   const [board, setBoard] = useState(null);
@@ -74,8 +74,7 @@ const ChessBoard = ({
           return;
         }
         // only pick up pieces for White
-        const playerOne = userId === playerOne
-        if (playerOne && piece.search(/^b/) !== -1) {
+        if (piece.search(/^b/) !== -1) {
           e.preventDefault();
           return;
         }
@@ -106,7 +105,7 @@ const ChessBoard = ({
           fen: game.fen(),
         };
         // Update the doc with the new fen
-        appwrite.database.updateDocument(
+        api.provider().database.updateDocument(
           /** Update Document */
           ChessCollection.id,
           documentId,

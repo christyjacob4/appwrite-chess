@@ -13,7 +13,7 @@ const Alert = ({ color, message }) => {
 
   return (
     <>
-      {showAlert ? (
+      {showAlert && (
         <div
           className={`text-white px-6 py-4 border-0 rounded absolute right-0 mt-10 mr-10 bg-${color}-500`}
         >
@@ -32,7 +32,7 @@ const Alert = ({ color, message }) => {
             <span>×</span>
           </button>
         </div>
-      ) : null}
+      )}
     </>
   );
 };

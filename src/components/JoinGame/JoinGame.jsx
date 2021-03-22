@@ -16,7 +16,8 @@ const JoinGame = ({ setParentData }) => {
       console.log("Joining Game");
       let session,
         account = await api.getAccount();
-      if( account["$id"] === playerOne ) throw new Error("You cant play with yourself :P")
+      if (account && account["$id"] === playerOne)
+        throw new Error("You cant play with yourself :P");
       if (!account) {
         console.log("No Account Currently logged in");
         let randomEmailId = `${createId(8)}@gmail.com`;

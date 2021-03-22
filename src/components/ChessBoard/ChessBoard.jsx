@@ -44,10 +44,10 @@ const ChessBoard = ({
 
   useEffect(() => {
     console.log("In fen Use effect", fen);
-    // if (!fen) return;
-    // if (!board) return;
-    // let status = game.load(fen)
-    // if (status) board.setPosition(fen)
+    if (!fen) return;
+    if (!board) return;
+    let status = game.load(fen)
+    if (status) board.setPosition(fen)
   },[fen])
 
   function cleanup() {

@@ -9,41 +9,49 @@ const CreateGame = ({ setParentData }) => {
   const [loading, setLoading] = useState(false);
 
   const handleCreateGame = async () => {
+    setLoading(true);
     try {
-      console.log('Creating Game');
-      setLoading(true);
-      let session = await api.getAccount();
-      if (!session) {
+      console.log("Creating Game");
+      let session,
+        account = await api.getAccount();
+
+      if (!account) {
+        console.log("No Account Currently logged in");
         let randomEmailId = `${createId(8)}@gmail.com`;
         let randomPassword = createId(8);
         let randomName = randomEmailId;
-        await api.createAccount(randomEmailId, randomPassword, randomName);
+        account = await api.createAccount(
+          randomEmailId,
+          randomPassword,
+          randomName
+        );
         session = await api.createSession(randomEmailId, randomPassword);
+        if (!session) throw new Error("Unable to Create Session");
+        console.log("Created new session");
       }
-
-      if (!session) throw new Error("Unable to Create Session");
+      let userId = account["$id"];
       /** Create the document */
       let payload = {
-        [ChessCollection.properties.playerOne]: session["$id"],
+        [ChessCollection.properties.playerOne]: userId,
         [ChessCollection.properties.status]: "WAITING",
       };
       let document = await api.createDocument(
         ChessCollection.id,
         payload,
-        ["*", `user:${session["$id"]}`],
-        ["*", `user:${session["$id"]}`]
+        ["*", `user:${userId}`],
+        ["*", `user:${userId}`]
       );
       if (!document) throw new Error("Unable to create game");
-      
-      console.log(document);
-      
+
+      console.log(account);
+
       const query = {
         documentId: document["$id"],
-        playerOne: session["$id"],
+        playerOne: userId,
       };
       setData({
         documentId: document["$id"],
-        userId: session['$id'],
+        userId: userId,
         gameUrl: `${window.location.origin}/?${qs.stringify(query)}`,
         playerOne: document["playerOne"],
         playerTwo: document["playerTwo"],
@@ -52,11 +60,11 @@ const CreateGame = ({ setParentData }) => {
         show: true,
         color: "green",
         message: "Great! Let's get started",
-        userId: session['$id'],
+        userId: userId,
         documentId: document["$id"],
         playerOne: document["playerOne"],
         playerTwo: document["playerTwo"],
-        fen: document["fen"]
+        fen: document["fen"],
       });
       setLoading(false);
     } catch (e) {

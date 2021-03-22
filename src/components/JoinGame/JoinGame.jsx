@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import api from '../../api/api'
-import { ChessCollection } from '../../utils/config';
-import { createId } from '../../utils/utils';
+import { useState } from "react";
+import api from "../../api/api";
+import { ChessCollection } from "../../utils/config";
+import { createId } from "../../utils/utils";
 import qs from "querystring";
 
 const JoinGame = ({ setParentData }) => {
@@ -11,44 +11,53 @@ const JoinGame = ({ setParentData }) => {
   const handleJoinGame = async () => {
     setLoading(true);
     let queryParams = qs.parse(window.location.search.substr(1));
-    let { documentId, playerOne } = queryParams
+    let { documentId, playerOne } = queryParams;
     try {
-      let session = await api.getAccount();
-      if (!session) {
+      console.log("Joining Game");
+      let session,
+        account = await api.getAccount();
+      if( account["$id"] === playerOne ) throw new Error("You cant play with yourself :P")
+      if (!account) {
+        console.log("No Account Currently logged in");
         let randomEmailId = `${createId(8)}@gmail.com`;
         let randomPassword = createId(8);
         let randomName = randomEmailId;
-        await api.createAccount(randomEmailId, randomPassword, randomName);
+        account = await api.createAccount(
+          randomEmailId,
+          randomPassword,
+          randomName
+        );
         session = await api.createSession(randomEmailId, randomPassword);
+        if (!session) throw new Error("Unable to Create Session");
+        console.log("Created new session");
       }
-      if (!session) throw new Error("Unable to Create Session");
-
+      let userId = account["$id"];
       /** Update the document */
       let payload = {
-        [ChessCollection.properties.playerTwo]: session["$id"],
+        [ChessCollection.properties.playerTwo]: userId,
         [ChessCollection.properties.status]: "IN PROGRESS",
       };
-      console.log(documentId, playerOne);
+
       let document = await api.updateDocument(
         ChessCollection.id,
         documentId,
         payload,
-        [`user:${session["$id"]}`, `user:${playerOne}`],
-        [`user:${session["$id"]}`, `user:${playerOne}`]
+        [`user:${userId}`, `user:${playerOne}`],
+        [`user:${userId}`, `user:${playerOne}`]
       );
       if (!document) throw new Error("Unable to create game");
-      
-      console.log("Updated Document", document);
+
+      console.log("Account", account);
 
       setParentData({
         show: true,
         color: "green",
         message: "Successfully Joined!",
-        userId: session['$id'],
+        userId: userId,
         documentId: document["$id"],
         playerOne: document["playerOne"],
         playerTwo: document["playerTwo"],
-        fen: document["fen"]
+        fen: document["fen"],
       });
       setLoading(false);
     } catch (e) {
@@ -68,17 +77,17 @@ const JoinGame = ({ setParentData }) => {
         Ready to <span className="text-green-600">Join?</span>
       </h1>
 
-      <button
-        className="mx-auto mt-8 py-4 px-16 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
-        onClick={handleJoinGame}
-        disabled={loading}
-      >
-        {loading ? "Joining Game ..." : "Join Game"}
-      </button>
-
+      {!data.documentId && (
+        <button
+          className="mx-auto mt-8 py-4 px-16 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
+          onClick={handleJoinGame}
+          disabled={loading}
+        >
+          {loading ? "Joining Game ..." : "Join Game"}
+        </button>
+      )}
     </>
   );
 };
-
 
 export default JoinGame;

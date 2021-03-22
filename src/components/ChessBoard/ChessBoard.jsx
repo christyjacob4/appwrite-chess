@@ -6,25 +6,25 @@ import realtime from "../../utils/Realtime";
 import { ChessCollection } from "../../utils/config";
 import api from "../../api/api";
 
+const game = new Chess();
+
 const ChessBoard = ({
   mode,
   documentId,
   playerOne,
   playerTwo,
   userId,
-  fen
+  fen,
 }) => {
   const TIMEOUT = 1000;
   const [board, setBoard] = useState(null);
-  const [game, setGame] = useState(new Chess());
 
   var timeout = [];
 
   useEffect(() => {
+    console.log("In board,mode Use effect");
     setBoard(document.querySelector("chess-board"));
-    console.log("In board Use effect");
-    cleanup()
-    
+    cleanup();
     switch (mode) {
       case GameMode.COMPUTER:
         setupComputerMatch();
@@ -39,8 +39,16 @@ const ChessBoard = ({
         break;
     }
 
-    return cleanup
-  }, [board, mode, documentId]);
+    return cleanup;
+  }, [board, mode]);
+
+  useEffect(() => {
+    console.log("In fen Use effect", fen);
+    // if (!fen) return;
+    // if (!board) return;
+    // let status = game.load(fen)
+    // if (status) board.setPosition(fen)
+  },[fen])
 
   function cleanup() {
     timeout.forEach(it => clearTimeout(it))
@@ -48,18 +56,17 @@ const ChessBoard = ({
   }
 
   function setupLiveMatch() {
-
-    if (board != null && documentId) {
-      console.log("Watching Document ", documentId);
-      realtime.subscribe(`documents.${documentId}`, (message) => {
-        const data = [message.payload];
-        console.log(data);
-      });
-
-      /** Setup the board */
-      let status = false
-      if (fen) status = game.load(fen) 
-      !status && game.reset()
+    console.log("Setting up Live match");
+    if (board != null) {
+      
+      /** 
+       * Setup the board
+       * Check if we have received a fen string from App. 
+       * If yes, load the fen string. else reset the board
+       *  */
+      let status = false;
+      if (fen) status = game.load(fen);
+      !status && game.reset();
       board.setPosition(game.fen());
       board.draggablePieces = true;
       userId === playerOne
@@ -73,8 +80,13 @@ const ChessBoard = ({
           e.preventDefault();
           return;
         }
-        // only pick up pieces for White
-        if (piece.search(/^b/) !== -1) {
+
+        if (piece.search(/^b/) === -1 && (userId === playerTwo)) {
+        /** If piece is white and player is two, prevent the action */
+          e.preventDefault();
+          return;
+        } else if (piece.search(/^w/) === -1 && (userId === playerOne)) {
+           /** If piece is black and player is one, prevent the action */
           e.preventDefault();
           return;
         }
@@ -88,7 +100,6 @@ const ChessBoard = ({
           to: target,
           promotion: "q", // NOTE: always promote to a queen for example simplicity
         });
-        console.log("DROP", move)
         // illegal move
         if (move === null) {
           setAction("snapback");
@@ -98,33 +109,34 @@ const ChessBoard = ({
 
       // update the board position after the piece snap
       // for castling, en passant, pawn promotion
-      board.addEventListener("snap-end", (e) => {
+      board.addEventListener("snap-end", async (e) => {
         board.setPosition(game.fen());
 
         const payload = {
           fen: game.fen(),
         };
         // Update the doc with the new fen
-        api.provider().database.updateDocument(
+        // The problem is figured out.
+        // Need to pass the permissions when updating the document
+        let updated = await api.provider().database.updateDocument(
           /** Update Document */
           ChessCollection.id,
           documentId,
           payload,
-          [],
-          []
+          [`user:${playerOne}`, `user:${playerTwo}`],
+          [`user:${playerOne}`, `user:${playerTwo}`]
         );
-
       });
     }
   }
 
   function setupComputerMatch() {
     if (board != null) {
-      let status = game.load(fen)
-      !status && game.reset()  
+      let status = game.load(fen);
+      !status && game.reset();
       board.setPosition(game.fen());
       board.draggablePieces = true;
-      
+
       board.addEventListener("drag-start", (e) => {
         const { source, piece, position, orientation } = e.detail;
         // do not pick up pieces if the game is over
@@ -167,7 +179,7 @@ const ChessBoard = ({
   }
 
   function makeRandomMove(repeat = true) {
-    console.log("Make Random Move Called with repeat", repeat)
+    console.log("Make Random Move Called with repeat", repeat);
     const possibleMoves = game.moves();
     // exit if the game is over
     if (game.game_over()) {

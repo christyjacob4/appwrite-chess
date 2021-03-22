@@ -1,15 +1,14 @@
 import ChessBoard from "../ChessBoard/ChessBoard";
 import "./App.css";
-import Appwrite from "appwrite";
 import { useState, useEffect } from "react";
 import Alert from "../Alert/Alert";
-import { GameMode, AppMode, createId } from "../../utils/utils";
+import { GameMode, AppMode } from "../../utils/utils";
 import qs from "querystring";
 import JoinGame from "../JoinGame/JoinGame";
 import CreateGame from "../CreateGame/CreateGame";
-import { ChessCollection } from "../../utils/config";
-import realtime from "../../utils/Realtime";
 import "../../api/api";
+import realtime from "../../utils/Realtime";
+import { ChessCollection } from "../../utils/config";
 
 const App = () => {
   /** HOOKS START */
@@ -27,6 +26,24 @@ const App = () => {
     setMode(mode);
   }, []);
 
+  useEffect(() => {
+    let { documentId } = data
+    if (documentId) {
+      /** When document ID changes, subscribe to realtime */
+      console.log("Watching Document ", documentId);
+      realtime.subscribe(`documents.${documentId}`, (message) => {
+        const { playerOne, playerTwo, fen } = message.payload;
+        console.log("Received Realtime Update", message.payload);
+        setData({
+          ...data,
+          playerOne: playerOne,
+          playerTwo: playerTwo,
+          fen : fen
+        })
+      });
+    }
+  }, [data.documentId]);
+
   function renderAppMode() {
     switch (mode) {
       case AppMode.JOIN:
@@ -35,6 +52,14 @@ const App = () => {
       default:
         return <CreateGame setParentData={setData} />;
     }
+  }
+
+  function getGameMode() {
+    if (!data.documentId) return GameMode.DEMO
+    if (!data.playerOne) return GameMode.DEMO
+    if (!data.playerTwo) return GameMode.DEMO
+    if (!data.userId) return GameMode.DEMO 
+    return GameMode.LIVE;
   }
 
   return (
@@ -49,7 +74,7 @@ const App = () => {
       {/* Left Side  */}
       <div className="chessboard my-auto mx-auto">
         <ChessBoard
-          mode={data.documentId ? GameMode.LIVE : GameMode.DEMO}
+          mode={getGameMode()}
           {...data}
         />
       </div>

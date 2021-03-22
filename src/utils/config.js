@@ -10,7 +10,7 @@ export const ChessCollection = {
 
 export const Server = {
     endpoint : "https://appwrite-realtime.monitor-api.com/v1",
-    webSocketEndpoint: "ws://appwrite-realtime.monitor-api.com/v1",
+    webSocketEndpoint: "wss://appwrite-realtime.monitor-api.com/v1",
     project: "6054c42b77f63"
 }
 

@@ -129,7 +129,7 @@ const ChessBoard = ({
             [`user:${playerOne}`, `user:${playerTwo}`]
           );
         });
-      }, 100);
+      }, 500);
     }
   }
 

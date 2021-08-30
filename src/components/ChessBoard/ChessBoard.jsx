@@ -47,7 +47,7 @@ const ChessBoard = ({
     if (!board) return;
     let status = game.load(fen)
     if (status) board.setPosition(fen)
-  },[fen])
+  }, [fen])
 
   function cleanup() {
     timeout.forEach(it => clearTimeout(it))
@@ -65,66 +65,71 @@ const ChessBoard = ({
       let status = false;
       if (fen) status = game.load(fen);
       !status && game.reset();
-      board.setPosition(game.fen());
-      board.draggablePieces = true;
-      userId === playerOne
-        ? (board.orientation = "white")
-        : (board.orientation = "black");
 
-      board.addEventListener("drag-start", (e) => {
-        const { source, piece, position, orientation } = e.detail;
-        // do not pick up pieces if the game is over
-        if (game.game_over()) {
-          e.preventDefault();
-          return;
-        }
-
-        if (piece.search(/^b/) === -1 && (userId === playerTwo)) {
-        /** If piece is white and player is two, prevent the action */
-          e.preventDefault();
-          return;
-        } else if (piece.search(/^w/) === -1 && (userId === playerOne)) {
-           /** If piece is black and player is one, prevent the action */
-          e.preventDefault();
-          return;
-        }
-      });
-
-      board.addEventListener("drop", (e) => {
-        const { source, target, setAction } = e.detail;
-        // see if the move is legal
-        const move = game.move({
-          from: source,
-          to: target,
-          promotion: "q", // NOTE: always promote to a queen for example simplicity
-        });
-        // illegal move
-        if (move === null) {
-          setAction("snapback");
-          return;
-        }
-      });
-
-      // update the board position after the piece snap
-      // for castling, en passant, pawn promotion
-      board.addEventListener("snap-end", async (e) => {
+      // There's a bug that causes the board to throw an error when using .setPosition()
+      // So adding this timeout to avoid the error
+      setTimeout(() => {
         board.setPosition(game.fen());
+        board.draggablePieces = true;
+        userId === playerOne
+          ? (board.orientation = "white")
+          : (board.orientation = "black");
 
-        const payload = {
-          fen: game.fen(),
-        };
-        // Update the doc with the new fen
-        // The problem is figured out.
-        // Need to pass the permissions when updating the document
-        let updated = await api.provider().database.updateDocument(
-          /** Update Document */
-          ChessCollection.id,
-          documentId,
-          payload,
-          [`user:${playerOne}`, `user:${playerTwo}`],
-          [`user:${playerOne}`, `user:${playerTwo}`]
-        );
-      });
+        board.addEventListener("drag-start", (e) => {
+          const { source, piece, position, orientation } = e.detail;
+          // do not pick up pieces if the game is over
+          if (game.game_over()) {
+            e.preventDefault();
+            return;
+          }
+
+          if (piece.search(/^b/) === -1 && (userId === playerTwo)) {
+            /** If piece is white and player is two, prevent the action */
+            e.preventDefault();
+            return;
+          } else if (piece.search(/^w/) === -1 && (userId === playerOne)) {
+            /** If piece is black and player is one, prevent the action */
+            e.preventDefault();
+            return;
+          }
+        });
+
+        board.addEventListener("drop", (e) => {
+          const { source, target, setAction } = e.detail;
+          // see if the move is legal
+          const move = game.move({
+            from: source,
+            to: target,
+            promotion: "q", // NOTE: always promote to a queen for example simplicity
+          });
+          // illegal move
+          if (move === null) {
+            setAction("snapback");
+            return;
+          }
+        });
+
+        // update the board position after the piece snap
+        // for castling, en passant, pawn promotion
+        board.addEventListener("snap-end", async (e) => {
+          board.setPosition(game.fen());
+
+          const payload = {
+            fen: game.fen(),
+          };
+          // Update the doc with the new fen
+          // The problem is figured out.
+          // Need to pass the permissions when updating the document
+          let updated = await api.provider().database.updateDocument(
+            /** Update Document */
+            ChessCollection.id,
+            documentId,
+            payload,
+            [`user:${playerOne}`, `user:${playerTwo}`],
+            [`user:${playerOne}`, `user:${playerTwo}`]
+          );
+        });
+      }, 100);
     }
   }
 

@@ -1,5 +1,5 @@
 export const ChessCollection = {
-    id : '605674c5116c7',
+    id : '612cd2a53e148',
     properties : {
         fen : 'fen',
         playerOne : 'playerOne',
@@ -9,9 +9,9 @@ export const ChessCollection = {
 }
 
 export const Server = {
-    endpoint : "https://appwrite-realtime.monitor-api.com/v1",
-    webSocketEndpoint: "wss://appwrite-realtime.monitor-api.com/v1",
-    project: "6054c42b77f63"
+    endpoint : "https://dlrealtime.appwrite.org/v1",
+    webSocketEndpoint: "wss://dlrealtime.appwrite.org/v1",
+    project: "612c76a61a499"
 }
 
 // export const Server = {

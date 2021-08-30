@@ -2,7 +2,6 @@ import "chessboard-element";
 import { useState, useEffect, Fragment } from "react";
 import Chess from "chess.js";
 import { GameMode } from "../../utils/utils";
-import realtime from "../../utils/Realtime";
 import { ChessCollection } from "../../utils/config";
 import api from "../../api/api";
 
@@ -58,7 +57,6 @@ const ChessBoard = ({
   function setupLiveMatch() {
     console.log("Setting up Live match");
     if (board != null) {
-      
       /** 
        * Setup the board
        * Check if we have received a fen string from App. 

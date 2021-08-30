@@ -1,4 +1,4 @@
-import Appwrite from "appwrite";
+import { Appwrite } from "appwrite-realtime-preview";
 import { ChessCollection, Server } from "../utils/config";
 import { createId } from "../utils/utils";
 
@@ -13,17 +13,17 @@ let api = {
     return appwrite;
   },
 
-  createAccount: async (email, password, name) => {
-    try {
-      const account = await api
-        .provider()
-        .account.create(email, password, name);
-      return account;
-    } catch (e) {
-      console.log(e);
-      return null;
-    }
-  },
+  // createAccount: async (email, password, name) => {
+  //   try {
+  //     const account = await api
+  //       .provider()
+  //       .account.createAnonymous(email, password, name);
+  //     return account;
+  //   } catch (e) {
+  //     console.log(e);
+  //     return null;
+  //   }
+  // },
 
   getAccount: async () => {
     try {
@@ -35,11 +35,11 @@ let api = {
     }
   },
 
-  createSession: async (email, password) => {
+  createAnonymousSession: async () => {
     try {
       const session = await api
         .provider()
-        .account.createSession(email, password);
+        .account.createAnonymousSession();
       return session;
     } catch (e) {
       console.log(e);

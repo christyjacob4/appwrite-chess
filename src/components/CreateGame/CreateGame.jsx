@@ -12,24 +12,18 @@ const CreateGame = ({ setParentData }) => {
     setLoading(true);
     try {
       console.log("Creating Game");
-      let session,
-        account = await api.getAccount();
+      let session, account = await api.getAccount();
 
       if (!account) {
-        console.log("No Account Currently logged in");
-        let randomEmailId = `${createId(8)}@gmail.com`;
-        let randomPassword = createId(8);
-        let randomName = randomEmailId;
-        account = await api.createAccount(
-          randomEmailId,
-          randomPassword,
-          randomName
-        );
-        session = await api.createSession(randomEmailId, randomPassword);
+        console.log("No Account Currently logged in. Creating Session...");
+        session = await api.createAnonymousSession();
         if (!session) throw new Error("Unable to Create Session");
         console.log("Created new session");
+        account = await api.getAccount();
       }
+
       let userId = account["$id"];
+     
       /** Create the document */
       let payload = {
         [ChessCollection.properties.playerOne]: userId,
@@ -42,8 +36,6 @@ const CreateGame = ({ setParentData }) => {
         ["*", `user:${userId}`]
       );
       if (!document) throw new Error("Unable to create game");
-
-      console.log(account);
 
       const query = {
         documentId: document["$id"],

@@ -66,9 +66,8 @@ const ChessBoard = ({
       if (fen) status = game.load(fen);
       !status && game.reset();
 
-      // There's a bug that causes the board to throw an error when using .setPosition()
-      // So adding this timeout to avoid the error
-      setTimeout(() => {
+
+      try {
         board.setPosition(game.fen());
         board.draggablePieces = true;
         userId === playerOne
@@ -125,11 +124,13 @@ const ChessBoard = ({
             ChessCollection.id,
             documentId,
             payload,
-            [`user:${playerOne}`, `user:${playerTwo}`],
+            ['*'],
             [`user:${playerOne}`, `user:${playerTwo}`]
           );
         });
-      }, 500);
+      } catch (error) {
+        console.log("Error in setting board position", error);
+      }
     }
   }
 

@@ -46,10 +46,10 @@ const App = () => {
   function renderAppMode() {
     switch (mode) {
       case AppMode.JOIN:
-        return <JoinGame setParentData={setData} />;
+        return <JoinGame setParentData={setData} parentData={data}/>;
       case AppMode.CREATE:
       default:
-        return <CreateGame setParentData={setData} />;
+        return <CreateGame setParentData={setData} parentData={data} />;
     }
   }
 
@@ -83,7 +83,7 @@ const App = () => {
         {renderAppMode()}
       </div>
 
-      <footer className="justify-self-center">Made with ♥️ and <span className="text-pink-700 font-bold">Appwrite</span></footer>
+      <footer className="justify-self-center">Made with ♥️ and <span className="text-pink-600 font-bold">Appwrite</span></footer>
     </div>
   );
 };

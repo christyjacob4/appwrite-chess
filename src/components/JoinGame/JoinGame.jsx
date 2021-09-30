@@ -4,8 +4,7 @@ import { ChessCollection } from "../../utils/config";
 import { createId } from "../../utils/utils";
 import qs from "querystring";
 
-const JoinGame = ({ setParentData }) => {
-  const [data, setData] = useState({});
+const JoinGame = ({ setParentData, parentData }) => {
   const [loading, setLoading] = useState(false);
 
   const handleJoinGame = async () => {
@@ -15,7 +14,7 @@ const JoinGame = ({ setParentData }) => {
     try {
       console.log("Joining Game");
       let session, account = await api.getAccount();
-     
+
       if (!account) {
         console.log("No Account Currently logged in. Creating Session...");
         session = await api.createAnonymousSession();
@@ -39,7 +38,7 @@ const JoinGame = ({ setParentData }) => {
         ChessCollection.id,
         documentId,
         payload,
-        [`user:${userId}`, `user:${playerOne}`],
+        ['*'],
         [`user:${userId}`, `user:${playerOne}`]
       );
 
@@ -69,18 +68,27 @@ const JoinGame = ({ setParentData }) => {
 
   return (
     <>
-      <h1 className="text-5xl font-semibold text-center px-16 py-8">
-        Ready to <span className="text-green-600">Join?</span>
-      </h1>
+      {!parentData.documentId && (
+        <div className="flex flex-col items-center">
+          <h1 className="text-5xl font-semibold text-center px-16 py-8">
+            Ready to <span className="text-green-600">Join?</span>
+          </h1>
+          <button
+            className="mx-auto mt-8 py-4 px-16 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
+            onClick={handleJoinGame}
+            disabled={loading}
+          >
+            {loading ? "Joining Game ..." : "Join Game"}
+          </button>
+        </div>
+      )}
 
-      {!data.documentId && (
-        <button
-          className="mx-auto mt-8 py-4 px-16 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
-          onClick={handleJoinGame}
-          disabled={loading}
-        >
-          {loading ? "Joining Game ..." : "Join Game"}
-        </button>
+      {parentData.documentId && (
+        <div className="flex flex-col items-center justify-center">
+          <h1 className="text-5xl font-semibold text-center px-16 py-8">
+            Game Started!
+          </h1>
+        </div>
       )}
     </>
   );
